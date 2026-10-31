@@ -2,245 +2,184 @@
 
 import { useState, useEffect } from "react";
 import { AppLayout } from "./components/layout/AppLayout";
-import { LandingPage } from "./components/landing/LandingPage";
-import { CharacterStudio } from "./components/studio/CharacterStudio";
 import { ChatEngine } from "./components/chat/ChatEngine";
-import { LoreVault } from "./components/lore/LoreVault";
 import { SettingsManager } from "./components/settings/SettingsManager";
 import { sendAiRequest } from "./utils/aiService";
-import { compileSystemInstructions } from "./utils/promptCompiler";
-import type { ActiveTab, CharacterCard, ChatMessage, UserSettings } from "./types/character";
-
-const INITIAL_CHARACTERS: CharacterCard[] = [
-    {
-        id: "char-1",
-        name: "Aethelgard",
-        title: "Ancient Knowledge Keeper",
-        personality:
-            "Stoic, precise, speaks with deliberate cadence and deep arcane vocabulary. Highly protective of ancient manuscripts and skeptical of uninvited visitors.",
-        scenario:
-            "{{user}} has breached the inner chamber of the Obsidian Library past midnight. {{char}} stands near the desk, turning a page without looking up.",
-        firstMessage:
-            "State your purpose, traveler. These illuminated manuscripts require complete silence.",
-        exampleDialogue: `<START>\n{{user}}: I am searching for lost spellcraft.\n{{char}}: *Aethelgard closes the heavy leather book with a dull thud, gazing over his spectacles.* "Lost spellcraft is rarely lost without good reason. What makes you think you possess the discipline to hold it?"`,
-        lorebook: [
-            {
-                id: "lore-1",
-                keys: ["obsidian library", "manuscript", "archive"],
-                content:
-                    "The Obsidian Library was built in the 3rd Arcane Era and holds forbidden texts locked behind warding runes.",
-                enabled: true,
-                comment: "Obsidian Library History",
-            },
-            {
-                id: "lore-2",
-                keys: ["spellcraft", "magic", "rune"],
-                content:
-                    "Magic in this realm requires raw somatic focus and precise vocal cadence. Careless spellcasters risk feedback curses.",
-                enabled: true,
-                comment: "Arcane System Laws",
-            },
-        ],
-        updatedAt: new Date().toISOString(),
-    },
-];
+import type { ChatSession, ChatMessage, UserSettings } from "./types/chat";
 
 const DEFAULT_SETTINGS: UserSettings = {
-    provider: "anthropic",
+    provider: "gemini",
     apiKey: "",
-    baseUrl: "https://api.anthropic.com/v1",
-    selectedModel: "claude-3-5-sonnet-20241022",
+    baseUrl: "https://generativelanguage.googleapis.com",
+    selectedModel: "gemini-1.5-flash",
     temperature: 0.7,
-    maxTokens: 1024,
+    maxTokens: 2048,
 };
 
-const DEFAULT_CHAT_HISTORIES: Record<string, ChatMessage[]> = {
-    "char-1": [
-        {
-            id: "msg-init-1",
-            role: "assistant",
-            content:
-                "State your purpose, traveler. These illuminated manuscripts require complete silence.",
-            timestamp: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-            }),
-        },
-    ],
+const INITIAL_SESSION: ChatSession = {
+    id: "session-1",
+    title: "New Conversation",
+    systemPrompt: "",
+    messages: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
 };
 
 export function App() {
-    // Mode toggle between Landing Showcase and Studio Workbench
-    const [viewMode, setViewMode] = useState<"landing" | "workspace">("landing");
-
-    // Load initial settings and characters from browser localStorage safely
+    // Settings state
     const [settings, setSettings] = useState<UserSettings>(() => {
         try {
-            const saved = localStorage.getItem("soul_chamber_settings");
-            return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+            const saved = localStorage.getItem("ai_studio_settings") || localStorage.getItem("soul_chamber_settings");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return { ...DEFAULT_SETTINGS, ...parsed };
+            }
+            return DEFAULT_SETTINGS;
         } catch {
             return DEFAULT_SETTINGS;
         }
     });
 
-    const [characters, setCharacters] = useState<CharacterCard[]>(() => {
+    // Chat sessions state
+    const [sessions, setSessions] = useState<ChatSession[]>(() => {
         try {
-            const saved = localStorage.getItem("soul_chamber_characters");
-            return saved ? JSON.parse(saved) : INITIAL_CHARACTERS;
+            const saved = localStorage.getItem("ai_studio_sessions");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            }
+            return [INITIAL_SESSION];
         } catch {
-            return INITIAL_CHARACTERS;
+            return [INITIAL_SESSION];
         }
     });
 
-    const [activeCharacterId, setActiveCharacterId] = useState<string | null>(() => {
-        const initialList = characters.length > 0 ? characters : INITIAL_CHARACTERS;
-        return initialList[0]?.id || null;
+    const [activeSessionId, setActiveSessionId] = useState<string>(() => {
+        return sessions[0]?.id || "session-1";
     });
-
-    const [activeTab, setActiveTab] = useState<ActiveTab>("chat");
 
     const [isGenerating, setIsGenerating] = useState(false);
-    const [chatError, setChatError] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>(() => {
-        try {
-            const saved = localStorage.getItem("soul_chamber_chat_histories");
-            return saved ? JSON.parse(saved) : DEFAULT_CHAT_HISTORIES;
-        } catch {
-            return DEFAULT_CHAT_HISTORIES;
-        }
-    });
-
-    // Sync settings, characters, and chat histories to LocalStorage on updates
+    // Sync settings & sessions to LocalStorage
     useEffect(() => {
-        localStorage.setItem("soul_chamber_settings", JSON.stringify(settings));
+        localStorage.setItem("ai_studio_settings", JSON.stringify(settings));
     }, [settings]);
 
     useEffect(() => {
-        localStorage.setItem("soul_chamber_characters", JSON.stringify(characters));
-    }, [characters]);
+        localStorage.setItem("ai_studio_sessions", JSON.stringify(sessions));
+    }, [sessions]);
 
-    useEffect(() => {
-        localStorage.setItem("soul_chamber_chat_histories", JSON.stringify(chatHistories));
-    }, [chatHistories]);
+    const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || INITIAL_SESSION;
 
-    const handleCreateNewCharacter = () => {
-        const newId = `char-${Date.now()}`;
-        const newChar: CharacterCard = {
+    const handleCreateNewSession = () => {
+        const newId = `session-${Date.now()}`;
+        const newSession: ChatSession = {
             id: newId,
-            name: "New Persona",
-            title: "Custom Role",
-            personality: "",
-            scenario: "",
-            firstMessage: "Greetings. I am ready to converse.",
-            lorebook: [],
+            title: "New Conversation",
+            systemPrompt: "",
+            messages: [],
+            createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
 
-        setCharacters((prev) => [newChar, ...prev]);
-        setChatHistories((prev) => ({
-            ...prev,
-            [newId]: [
-                {
-                    id: `msg-init-${Date.now()}`,
-                    role: "assistant",
-                    content: newChar.firstMessage,
-                    timestamp: new Date().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    }),
-                },
-            ],
-        }));
-        setActiveCharacterId(newId);
-        setActiveTab("studio");
-        setViewMode("workspace");
+        setSessions((prev) => [newSession, ...prev]);
+        setActiveSessionId(newId);
+        setErrorMessage(null);
     };
 
-    const handleDeleteCharacter = (characterId: string) => {
-        const remainingCharacters = characters.filter((c) => c.id !== characterId);
-        setCharacters(remainingCharacters);
-
-        setChatHistories((prev) => {
-            const updated = { ...prev };
-            delete updated[characterId];
-            return updated;
-        });
-
-        if (activeCharacterId === characterId) {
-            setActiveCharacterId(remainingCharacters.length > 0 ? remainingCharacters[0].id : null);
+    const handleDeleteSession = (sessionId: string) => {
+        const remaining = sessions.filter((s) => s.id !== sessionId);
+        if (remaining.length === 0) {
+            const fresh = {
+                id: `session-${Date.now()}`,
+                title: "New Conversation",
+                systemPrompt: "",
+                messages: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+            setSessions([fresh]);
+            setActiveSessionId(fresh.id);
+        } else {
+            setSessions(remaining);
+            if (activeSessionId === sessionId) {
+                setActiveSessionId(remaining[0].id);
+            }
         }
     };
 
-    const handleUpdateCharacter = (updated: CharacterCard) => {
-        setCharacters((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    const handleUpdateSystemPrompt = (newPrompt: string) => {
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === activeSession.id
+                    ? { ...s, systemPrompt: newPrompt, updatedAt: new Date().toISOString() }
+                    : s,
+            ),
+        );
     };
 
-    const handleImportCharacter = (imported: CharacterCard) => {
-        setCharacters((prev) => [imported, ...prev]);
-        setChatHistories((prev) => ({
-            ...prev,
-            [imported.id]: [
-                {
-                    id: `msg-init-${Date.now()}`,
-                    role: "assistant",
-                    content: imported.firstMessage || "Greetings.",
-                    timestamp: new Date().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    }),
-                },
-            ],
-        }));
-        setActiveCharacterId(imported.id);
-        setActiveTab("studio");
-        setViewMode("workspace");
+    const handleClearHistory = () => {
+        setErrorMessage(null);
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === activeSession.id
+                    ? { ...s, messages: [], updatedAt: new Date().toISOString() }
+                    : s,
+            ),
+        );
     };
 
-    const handleImportRosterBackup = (importedList: CharacterCard[]) => {
-        setCharacters(importedList);
-        if (importedList.length > 0) {
-            setActiveCharacterId(importedList[0].id);
-        }
-        setViewMode("workspace");
-    };
-
-    const handleSendMessage = async (characterId: string, content: string) => {
-        setChatError(null);
-        const timestampStr = new Date().toLocaleTimeString([], {
+    const handleSendMessage = async (content: string) => {
+        setErrorMessage(null);
+        const timestamp = new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
         });
+
         const userMessage: ChatMessage = {
             id: `msg-user-${Date.now()}`,
             role: "user",
             content,
-            timestamp: timestampStr,
+            timestamp,
         };
 
-        const updatedHistory = [...(chatHistories[characterId] || []), userMessage];
+        // Determine title if this is the first user turn in the session
+        const currentMessages = activeSession.messages;
+        let newTitle = activeSession.title;
+        if (currentMessages.length === 0 || activeSession.title === "New Conversation") {
+            newTitle = content.trim().slice(0, 36) + (content.length > 36 ? "..." : "");
+        }
 
-        setChatHistories((prev) => ({
-            ...prev,
-            [characterId]: updatedHistory,
-        }));
+        const updatedHistory = [...currentMessages, userMessage];
 
-        const activeChar = characters.find((c) => c.id === characterId);
-        if (!activeChar) return;
-
-        const compiled = compileSystemInstructions(activeChar, "User", content);
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === activeSession.id
+                    ? {
+                          ...s,
+                          title: newTitle,
+                          messages: updatedHistory,
+                          updatedAt: new Date().toISOString(),
+                      }
+                    : s,
+            ),
+        );
 
         setIsGenerating(true);
 
         try {
             const aiResponseText = await sendAiRequest(
                 settings,
-                compiled.systemInstructions,
+                activeSession.systemPrompt,
                 updatedHistory,
             );
 
             const assistantMessage: ChatMessage = {
-                id: `msg-asst-${Date.now()}`,
+                id: `msg-ai-${Date.now()}`,
                 role: "assistant",
                 content: aiResponseText,
                 timestamp: new Date().toLocaleTimeString([], {
@@ -249,65 +188,57 @@ export function App() {
                 }),
             };
 
-            setChatHistories((prev) => ({
-                ...prev,
-                [characterId]: [...(prev[characterId] || []), assistantMessage],
-            }));
+            setSessions((prev) =>
+                prev.map((s) =>
+                    s.id === activeSession.id
+                        ? {
+                              ...s,
+                              messages: [...(s.messages || []), assistantMessage],
+                              updatedAt: new Date().toISOString(),
+                          }
+                        : s,
+                ),
+            );
         } catch (err: any) {
-            setChatError(err.message || "Failed to generate response.");
+            setErrorMessage(err.message || "Failed to generate response.");
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const handleClearHistory = (characterId: string) => {
-        setChatError(null);
-        const activeChar = characters.find((c) => c.id === characterId);
-        setChatHistories((prev) => ({
-            ...prev,
-            [characterId]: [
-                {
-                    id: `msg-init-${Date.now()}`,
-                    role: "assistant",
-                    content: activeChar?.firstMessage || "Greetings.",
-                    timestamp: new Date().toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    }),
-                },
-            ],
-        }));
-    };
+    const handleRegenerateLastTurn = async () => {
+        const currentMessages = activeSession.messages;
+        if (currentMessages.length === 0) return;
 
-    const handleRegenerateLastTurn = async (characterId: string) => {
-        const currentHistory = chatHistories[characterId] || [];
-        if (currentHistory.length <= 1) return;
+        setErrorMessage(null);
 
-        setChatError(null);
-        const slicedHistory = currentHistory.slice(0, -1);
-        const lastUserTurn = slicedHistory.filter((m) => m.role === "user").slice(-1)[0];
+        // Remove last assistant turn if present
+        let sliced = [...currentMessages];
+        if (sliced[sliced.length - 1].role === "assistant") {
+            sliced = sliced.slice(0, -1);
+        }
 
-        setChatHistories((prev) => ({
-            ...prev,
-            [characterId]: slicedHistory,
-        }));
+        if (sliced.length === 0) return;
 
-        const activeChar = characters.find((c) => c.id === characterId);
-        if (!activeChar) return;
-
-        const compiled = compileSystemInstructions(activeChar, "User", lastUserTurn?.content || "");
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === activeSession.id
+                    ? { ...s, messages: sliced, updatedAt: new Date().toISOString() }
+                    : s,
+            ),
+        );
 
         setIsGenerating(true);
 
         try {
             const aiResponseText = await sendAiRequest(
                 settings,
-                compiled.systemInstructions,
-                slicedHistory,
+                activeSession.systemPrompt,
+                sliced,
             );
 
             const assistantMessage: ChatMessage = {
-                id: `msg-asst-${Date.now()}`,
+                id: `msg-ai-${Date.now()}`,
                 role: "assistant",
                 content: aiResponseText,
                 timestamp: new Date().toLocaleTimeString([], {
@@ -316,70 +247,61 @@ export function App() {
                 }),
             };
 
-            setChatHistories((prev) => ({
-                ...prev,
-                [characterId]: [...(prev[characterId] || []), assistantMessage],
-            }));
+            setSessions((prev) =>
+                prev.map((s) =>
+                    s.id === activeSession.id
+                        ? {
+                              ...s,
+                              messages: [...s.messages, assistantMessage],
+                              updatedAt: new Date().toISOString(),
+                          }
+                        : s,
+                ),
+            );
         } catch (err: any) {
-            setChatError(err.message || "Failed to regenerate response.");
+            setErrorMessage(err.message || "Failed to regenerate response.");
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const activeCharacter = characters.find((c) => c.id === activeCharacterId) || null;
-    const currentMessages = activeCharacterId ? chatHistories[activeCharacterId] || [] : [];
-
-    if (viewMode === "landing") {
-        return <LandingPage onLaunchStudio={() => setViewMode("workspace")} />;
-    }
+    const handleImportSessions = (importedList: ChatSession[]) => {
+        if (!importedList || importedList.length === 0) return;
+        setSessions(importedList);
+        setActiveSessionId(importedList[0].id);
+    };
 
     return (
         <AppLayout
-            characters={characters}
-            activeCharacterId={activeCharacterId}
-            activeTab={activeTab}
+            sessions={sessions}
+            activeSessionId={activeSession.id}
             selectedModel={settings.selectedModel}
-            onSelectCharacter={setActiveCharacterId}
-            onCreateNewCharacter={handleCreateNewCharacter}
-            onDeleteCharacter={handleDeleteCharacter}
-            onTabChange={setActiveTab}
-            onGoHome={() => setViewMode("landing")}
+            onSelectSession={setActiveSessionId}
+            onCreateNewSession={handleCreateNewSession}
+            onDeleteSession={handleDeleteSession}
+            onOpenSettings={() => setIsSettingsOpen(true)}
         >
-            {activeTab === "studio" && activeCharacter && (
-                <CharacterStudio
-                    character={activeCharacter}
-                    onUpdateCharacter={handleUpdateCharacter}
-                />
-            )}
+            <ChatEngine
+                session={activeSession}
+                isGenerating={isGenerating}
+                errorMessage={errorMessage}
+                selectedModel={settings.selectedModel}
+                onSendMessage={handleSendMessage}
+                onUpdateSystemPrompt={handleUpdateSystemPrompt}
+                onClearHistory={handleClearHistory}
+                onRegenerateLastTurn={handleRegenerateLastTurn}
+                onDismissError={() => setErrorMessage(null)}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+            />
 
-            {activeTab === "chat" && activeCharacter && (
-                <ChatEngine
-                    character={activeCharacter}
-                    messages={currentMessages}
-                    isGenerating={isGenerating}
-                    errorMessage={chatError}
-                    onSendMessage={(content) => handleSendMessage(activeCharacter.id, content)}
-                    onClearHistory={() => handleClearHistory(activeCharacter.id)}
-                    onRegenerateLastTurn={() => handleRegenerateLastTurn(activeCharacter.id)}
-                    onDismissError={() => setChatError(null)}
-                />
-            )}
-
-            {activeTab === "lore" && activeCharacter && (
-                <LoreVault character={activeCharacter} onUpdateCharacter={handleUpdateCharacter} />
-            )}
-
-            {activeTab === "settings" && (
-                <SettingsManager
-                    settings={settings}
-                    onUpdateSettings={setSettings}
-                    characters={characters}
-                    activeCharacter={activeCharacter}
-                    onImportCharacter={handleImportCharacter}
-                    onImportRosterBackup={handleImportRosterBackup}
-                />
-            )}
+            <SettingsManager
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                settings={settings}
+                onUpdateSettings={setSettings}
+                sessions={sessions}
+                onImportSessions={handleImportSessions}
+            />
         </AppLayout>
     );
 }

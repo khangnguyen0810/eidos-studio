@@ -1,60 +1,57 @@
 // src/components/layout/AppLayout.tsx
+
 import React, { useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import type { ActiveTab, CharacterCard } from "../../types/character";
+import type { ChatSession } from "../../types/chat";
 
 interface AppLayoutProps {
-    characters: CharacterCard[];
-    activeCharacterId: string | null;
-    activeTab: ActiveTab;
-    selectedModel?: string;
-    onSelectCharacter: (id: string) => void;
-    onCreateNewCharacter: () => void;
-    onDeleteCharacter: (id: string) => void;
-    onTabChange: (tab: ActiveTab) => void;
-    onGoHome?: () => void; // Passed to Header
+    sessions: ChatSession[];
+    activeSessionId: string | null;
+    selectedModel: string;
+    onSelectSession: (id: string) => void;
+    onCreateNewSession: () => void;
+    onDeleteSession: (id: string) => void;
+    onOpenSettings: () => void;
     children: React.ReactNode;
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({
-    characters,
-    activeCharacterId,
-    activeTab,
+    sessions,
+    activeSessionId,
     selectedModel,
-    onSelectCharacter,
-    onCreateNewCharacter,
-    onDeleteCharacter,
-    onTabChange,
-    onGoHome,
+    onSelectSession,
+    onCreateNewSession,
+    onDeleteSession,
+    onOpenSettings,
     children,
 }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const activeCharacter = characters.find((c) => c.id === activeCharacterId) || null;
 
     return (
         <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#0B0C0E] font-sans text-zinc-100 antialiased">
             <Header
-                activeCharacter={activeCharacter}
-                activeTab={activeTab}
-                selectedModel={selectedModel}
-                onTabChange={onTabChange}
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-                onGoHome={onGoHome}
+                selectedModel={selectedModel}
+                onOpenSettings={onOpenSettings}
             />
 
             <div className="flex flex-1 overflow-hidden">
                 <Sidebar
                     isOpen={isSidebarOpen}
-                    characters={characters}
-                    activeCharacterId={activeCharacterId}
-                    onSelectCharacter={onSelectCharacter}
-                    onCreateNewCharacter={onCreateNewCharacter}
-                    onDeleteCharacter={onDeleteCharacter}
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    selectedModel={selectedModel}
+                    onSelectSession={onSelectSession}
+                    onCreateNewSession={onCreateNewSession}
+                    onDeleteSession={onDeleteSession}
+                    onOpenSettings={onOpenSettings}
                 />
 
-                <main className="flex-1 overflow-y-auto bg-[#0B0C0E]">{children}</main>
+                <main className="flex flex-1 flex-col overflow-hidden bg-[#0B0C0E]">
+                    {children}
+                </main>
             </div>
         </div>
     );
