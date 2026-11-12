@@ -29,7 +29,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     return (
-        <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#0B0C0E] font-sans text-zinc-100 antialiased">
+        <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#09090B] font-sans text-zinc-100 antialiased selection:bg-zinc-200/15 selection:text-zinc-100">
             <Header
                 isSidebarOpen={isSidebarOpen}
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -49,7 +49,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                     onOpenSettings={onOpenSettings}
                 />
 
-                <main className="flex flex-1 flex-col overflow-hidden bg-[#0B0C0E]">
+                <main className="flex flex-1 flex-col overflow-hidden bg-[#09090B]">
                     {children}
                 </main>
             </div>

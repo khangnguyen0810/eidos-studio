@@ -96,42 +96,40 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
     };
 
     return (
-        <div className="flex h-full flex-col bg-[#0B0C0E]">
+        <div className="flex h-full flex-col bg-[#09090B]">
             {/* Top Toolbar */}
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#0E1013]/90 px-4 md:px-6 backdrop-blur-md select-none">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-zinc-100">
-                            {session.title || "Conversation"}
-                        </span>
-                    </div>
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] bg-[#09090B] px-4 md:px-6 select-none">
+                <div className="flex items-center gap-3 min-w-0">
+                    <span className="truncate text-xs font-medium text-zinc-200">
+                        {session.title || "Conversation"}
+                    </span>
 
                     <button
                         onClick={onOpenSettings}
-                        className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-0.5 font-mono text-[11px] text-emerald-300 transition-colors hover:bg-emerald-900/40"
+                        className="hidden sm:flex items-center gap-1.5 rounded-md border border-white/[0.08] bg-[#121216] px-2 py-0.5 font-mono text-[10px] text-zinc-400 transition-colors hover:border-white/[0.16] hover:text-zinc-200"
                         title="Click to change model or API key"
                     >
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
                         <span>{selectedModel}</span>
                     </button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <button
                         onClick={() => setIsSystemPromptOpen(!isSystemPromptOpen)}
-                        className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${
+                        className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors ${
                             isSystemPromptOpen
-                                ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300"
-                                : "border-white/10 bg-zinc-900 text-zinc-400 hover:text-zinc-200"
+                                ? "border-white/[0.16] bg-[#18181D] text-zinc-100"
+                                : "border-white/[0.07] bg-[#121216] text-zinc-400 hover:border-white/[0.14] hover:text-zinc-200"
                         }`}
                         title="Toggle System Instructions panel"
                     >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
+                        <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
                         </svg>
                         <span>System Prompt</span>
                         {systemPromptTokens > 0 && (
-                            <span className="rounded bg-white/10 px-1 py-0.2 font-mono text-[10px]">
+                            <span className="rounded bg-white/[0.08] px-1.5 py-0.2 font-mono text-[10px] text-zinc-300">
                                 {systemPromptTokens}t
                             </span>
                         )}
@@ -140,33 +138,33 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                     <button
                         onClick={onClearHistory}
                         disabled={isGenerating || session.messages.length === 0}
-                        className="rounded-lg border border-white/10 bg-zinc-900 px-2.5 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-40"
+                        className="rounded-md border border-white/[0.07] bg-[#121216] px-2.5 py-1 text-xs text-zinc-400 transition-colors hover:border-white/[0.14] hover:bg-[#17171C] hover:text-zinc-200 disabled:opacity-35 disabled:pointer-events-none"
                         title="Clear conversation messages"
                     >
-                        Clear Chat
+                        Clear
                     </button>
                 </div>
             </div>
 
             {/* Error Banner */}
             {errorMessage && (
-                <div className="flex items-center justify-between border-b border-rose-500/30 bg-rose-950/80 px-4 py-2.5 text-xs text-rose-300 backdrop-blur-md">
+                <div className="flex items-center justify-between border-b border-red-900/40 bg-[#160D0F] px-4 py-2.5 text-xs text-red-300">
                     <div className="flex items-center gap-2">
-                        <svg className="h-4 w-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        <svg className="h-4 w-4 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         <span>{errorMessage}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={onOpenSettings}
-                            className="rounded bg-rose-900/60 px-2 py-0.5 text-[11px] font-medium text-rose-200 hover:bg-rose-800"
+                            className="rounded border border-red-800/50 bg-red-950/60 px-2.5 py-0.5 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-900/60"
                         >
-                            Open Settings
+                            Settings
                         </button>
                         <button
                             onClick={onDismissError}
-                            className="rounded px-2 py-0.5 text-[11px] text-rose-400 hover:bg-rose-900/40 hover:text-rose-200"
+                            className="rounded px-2 py-0.5 text-[11px] text-red-400 hover:bg-red-950/40 hover:text-red-200"
                         >
                             Dismiss
                         </button>
@@ -174,28 +172,28 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                 </div>
             )}
 
-            {/* System Instructions Panel (Google AI Studio Style) */}
+            {/* System Instructions Panel */}
             {isSystemPromptOpen && (
-                <div className="shrink-0 border-b border-white/[0.08] bg-[#111317] p-4 md:px-6">
-                    <div className="mx-auto max-w-4xl space-y-2">
+                <div className="shrink-0 border-b border-white/[0.07] bg-[#0D0D10] p-4 md:px-6">
+                    <div className="mx-auto max-w-4xl space-y-2.5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <label className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-zinc-300 uppercase">
-                                    <svg className="h-3.5 w-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                <label className="flex items-center gap-1.5 font-mono text-[11px] font-medium tracking-wider text-zinc-300 uppercase">
+                                    <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                     System Instructions
                                 </label>
-                                <span className="font-mono text-[11px] text-zinc-500">
-                                    (Guides model behavior across the conversation)
+                                <span className="hidden sm:inline font-mono text-[10px] text-zinc-500">
+                                    — Directs model behavior across the session
                                 </span>
                             </div>
-                            <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-400">
+                            <div className="flex items-center gap-3 font-mono text-[10px] text-zinc-500">
                                 <span>{systemPromptTokens} tokens</span>
                                 {session.systemPrompt && (
                                     <button
                                         onClick={() => onUpdateSystemPrompt("")}
-                                        className="text-zinc-500 hover:text-zinc-300"
+                                        className="text-zinc-400 transition-colors hover:text-zinc-100"
                                         title="Clear system prompt"
                                     >
                                         Clear
@@ -207,19 +205,21 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                         <textarea
                             value={session.systemPrompt}
                             onChange={(e) => onUpdateSystemPrompt(e.target.value)}
-                            placeholder="Optional: Add system instructions to direct model behavior (e.g., 'You are a helpful assistant that explains concepts concisely with code examples.'). Leave empty for standard conversational responses."
+                            placeholder="Optional: Define system instructions (e.g., 'You are a concise technical architect. Respond with clear reasoning and production code.')."
                             rows={3}
-                            className="w-full rounded-lg border border-white/10 bg-[#0B0C0E] p-2.5 font-mono text-xs leading-relaxed text-zinc-200 placeholder-zinc-600 transition-colors focus:border-emerald-500/60 focus:outline-none"
+                            className="w-full rounded-md border border-white/[0.08] bg-[#09090B] p-3 font-mono text-xs leading-relaxed text-zinc-200 placeholder-zinc-600 transition-colors focus:border-white/[0.22] focus:outline-none"
                         />
 
-                        {/* Quick Presets for System Instructions */}
-                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                            <span className="font-mono text-[10px] text-zinc-500">Quick Presets:</span>
+                        {/* Quick Presets */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="mr-1 font-mono text-[10px] tracking-wide text-zinc-500 uppercase">
+                                Presets:
+                            </span>
                             {QUICK_STARTERS.map((s, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => onUpdateSystemPrompt(s.systemPrompt)}
-                                    className="rounded border border-white/5 bg-zinc-800/80 px-2 py-0.5 text-[11px] text-zinc-300 transition-colors hover:border-emerald-500/30 hover:bg-zinc-700 hover:text-zinc-100"
+                                    className="rounded border border-white/[0.07] bg-[#141418] px-2 py-0.5 text-[11px] text-zinc-400 transition-colors hover:border-white/[0.16] hover:bg-[#1A1A20] hover:text-zinc-100"
                                 >
                                     {s.title}
                                 </button>
@@ -232,24 +232,24 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
             {/* Conversation Timeline Area */}
             <div
                 ref={scrollContainerRef}
-                className="flex-1 space-y-6 overflow-y-auto px-4 py-6 md:px-6"
+                className="flex-1 space-y-5 overflow-y-auto px-4 py-6 md:px-6"
             >
                 {session.messages.length === 0 ? (
-                    // Empty State: Welcoming Screen
+                    // Empty State
                     <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center py-12 text-center">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-950/30 text-emerald-400 shadow-lg shadow-emerald-950/20">
-                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/[0.1] bg-[#121216] text-zinc-300 shadow-sm">
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                             </svg>
                         </div>
-                        <h2 className="mt-4 text-lg font-semibold text-zinc-100">
-                            Chat & Prompt Studio
+                        <h2 className="mt-4 text-base font-medium tracking-tight text-zinc-100">
+                            New Session
                         </h2>
-                        <p className="mt-1 max-w-md text-xs text-zinc-400">
-                            Start conversing with {selectedModel}. Add custom System Instructions above to guide responses without any rigid template.
+                        <p className="mt-1.5 max-w-md text-xs leading-relaxed text-zinc-500">
+                            Connected to <span className="font-mono text-zinc-300">{selectedModel}</span>. Add custom system instructions above or begin your conversation below.
                         </p>
 
-                        <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div className="mt-8 grid w-full grid-cols-1 gap-2.5 sm:grid-cols-3">
                             {QUICK_STARTERS.map((item, idx) => (
                                 <button
                                     key={idx}
@@ -257,12 +257,12 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                                         onUpdateSystemPrompt(item.systemPrompt);
                                         onSendMessage(item.prompt);
                                     }}
-                                    className="group flex flex-col items-start rounded-xl border border-white/[0.08] bg-[#111317] p-3 text-left transition-all hover:border-emerald-500/40 hover:bg-[#16181E]"
+                                    className="group flex flex-col items-start rounded-lg border border-white/[0.07] bg-[#101014] p-3.5 text-left transition-all hover:border-white/[0.18] hover:bg-[#15151A]"
                                 >
-                                    <span className="text-xs font-semibold text-zinc-200 group-hover:text-emerald-300">
+                                    <span className="text-xs font-medium text-zinc-200 group-hover:text-white">
                                         {item.title}
                                     </span>
-                                    <span className="mt-1 line-clamp-2 text-[11px] text-zinc-400">
+                                    <span className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-zinc-500 group-hover:text-zinc-400">
                                         {item.prompt}
                                     </span>
                                 </button>
@@ -270,56 +270,48 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="mx-auto max-w-4xl space-y-6">
+                    <div className="mx-auto max-w-4xl space-y-5">
                         {session.messages.map((msg, idx) => {
                             const isUser = msg.role === "user";
 
                             return (
                                 <div
                                     key={msg.id}
-                                    className={`flex flex-col space-y-1.5 ${
+                                    className={`flex flex-col space-y-1.5 animate-fade-in ${
                                         isUser ? "items-end" : "items-start"
                                     }`}
                                 >
                                     <div
-                                        className={`max-w-[88%] rounded-2xl p-4 shadow-md transition-all ${
+                                        className={`max-w-[88%] rounded-xl p-4 transition-colors ${
                                             isUser
-                                                ? "rounded-tr-xs border border-white/20 bg-zinc-100 text-zinc-950"
-                                                : "rounded-tl-xs border border-white/[0.08] bg-[#14171C] text-zinc-100"
+                                                ? "rounded-tr-xs border border-white/[0.11] bg-[#18181D] text-zinc-100"
+                                                : "rounded-tl-xs border border-white/[0.06] bg-[#101014] text-zinc-200"
                                         }`}
                                     >
                                         {/* Message Header */}
-                                        <div
-                                            className={`mb-2.5 flex items-center justify-between border-b pb-1.5 select-none ${
-                                                isUser ? "border-zinc-300/60" : "border-white/[0.08]"
-                                            }`}
-                                        >
+                                        <div className="mb-2.5 flex items-center justify-between gap-4 border-b border-white/[0.06] pb-2 select-none">
                                             <div className="flex items-center gap-2">
                                                 <div
-                                                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                                                    className={`flex h-5 w-5 items-center justify-center rounded text-[10px] font-mono font-medium ${
                                                         isUser
-                                                            ? "bg-zinc-800 text-zinc-100"
-                                                            : "bg-emerald-950/80 text-emerald-400 border border-emerald-500/30"
+                                                            ? "border border-white/[0.1] bg-[#222229] text-zinc-200"
+                                                            : "bg-zinc-100 text-zinc-950 font-semibold"
                                                     }`}
                                                 >
                                                     {isUser ? "U" : "AI"}
                                                 </div>
-                                                <span className="font-mono text-[11px] font-medium text-zinc-400">
+                                                <span className="font-mono text-[11px] text-zinc-400">
                                                     {isUser ? "You" : selectedModel}
                                                 </span>
                                             </div>
 
                                             <button
                                                 onClick={() => handleCopyMessage(msg.id, msg.content)}
-                                                className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] transition-colors ${
-                                                    isUser
-                                                        ? "text-zinc-600 hover:text-zinc-900"
-                                                        : "text-zinc-400 hover:text-zinc-200"
-                                                }`}
+                                                className="rounded px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-200"
                                                 title="Copy message content"
                                             >
                                                 {copiedMessageId === msg.id ? (
-                                                    <span className="text-emerald-500 font-semibold">Copied!</span>
+                                                    <span className="text-zinc-200">Copied</span>
                                                 ) : (
                                                     <span>Copy</span>
                                                 )}
@@ -330,21 +322,17 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                                         <FormattedMessageContent content={msg.content} isUser={isUser} />
 
                                         {/* Message Footer */}
-                                        <div
-                                            className={`mt-2.5 flex items-center justify-between border-t pt-1.5 font-mono text-[10px] ${
-                                                isUser ? "border-zinc-300/40 text-zinc-500" : "border-white/[0.06] text-zinc-500"
-                                            }`}
-                                        >
+                                        <div className="mt-3 flex items-center justify-between border-t border-white/[0.05] pt-2 font-mono text-[10px] text-zinc-500">
                                             <span>{msg.timestamp}</span>
 
                                             {!isUser && idx === session.messages.length - 1 && !isGenerating && (
                                                 <button
                                                     onClick={onRegenerateLastTurn}
-                                                    className="flex items-center gap-1 text-zinc-400 transition-colors hover:text-emerald-400"
+                                                    className="flex items-center gap-1.5 text-zinc-400 transition-colors hover:text-zinc-100"
                                                     title="Regenerate last response"
                                                 >
                                                     <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
                                                     </svg>
                                                     <span>Regenerate</span>
                                                 </button>
@@ -357,14 +345,14 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
 
                         {/* Generating State */}
                         {isGenerating && (
-                            <div className="flex flex-col items-start space-y-1.5">
-                                <div className="flex items-center gap-3 rounded-2xl rounded-tl-xs border border-emerald-500/20 bg-[#14171C] px-4 py-3 shadow-lg">
-                                    <div className="flex h-5 w-5 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-950/40 text-[10px] font-bold text-emerald-400">
+                            <div className="flex flex-col items-start">
+                                <div className="flex items-center gap-3 rounded-xl rounded-tl-xs border border-white/[0.08] bg-[#101014] px-4 py-3">
+                                    <div className="flex h-5 w-5 items-center justify-center rounded bg-zinc-100 font-mono text-[10px] font-semibold text-zinc-950">
                                         AI
                                     </div>
-                                    <span className="h-2 w-2 animate-ping rounded-full bg-emerald-400" />
-                                    <span className="font-mono text-xs text-emerald-300">
-                                        {selectedModel} is thinking...
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-300" />
+                                    <span className="font-mono text-xs text-zinc-400">
+                                        {selectedModel} is generating...
                                     </span>
                                 </div>
                             </div>
@@ -374,10 +362,10 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
             </div>
 
             {/* Input Floor */}
-            <div className="shrink-0 border-t border-white/[0.08] bg-[#0E1013]/90 p-4 md:px-6 backdrop-blur-md select-none">
+            <div className="shrink-0 border-t border-white/[0.07] bg-[#09090B] p-4 md:px-6 select-none">
                 <form
                     onSubmit={handleSubmit}
-                    className="relative mx-auto flex max-w-4xl items-end rounded-xl border border-white/[0.1] bg-[#14171C] px-3.5 py-2.5 shadow-inner transition-colors focus-within:border-emerald-500/50"
+                    className="relative mx-auto flex max-w-4xl items-end rounded-lg border border-white/[0.09] bg-[#121216] px-3.5 py-2.5 transition-colors focus-within:border-white/[0.24]"
                 >
                     <textarea
                         ref={textareaRef}
@@ -388,26 +376,26 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                         placeholder={
                             isGenerating
                                 ? "Waiting for response..."
-                                : `Message ${selectedModel}... (Enter to send, Shift + Enter for new line)`
+                                : `Message ${selectedModel}...`
                         }
                         rows={1}
-                        className="max-h-48 min-h-[1.75rem] flex-1 resize-none bg-transparent px-1 py-1 font-sans text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none disabled:opacity-50"
+                        className="max-h-48 min-h-[1.75rem] flex-1 resize-none bg-transparent px-1 py-1 font-sans text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none disabled:opacity-50"
                     />
 
                     <button
                         type="submit"
                         disabled={!input.trim() || isGenerating}
-                        className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-950 transition-all hover:bg-white active:scale-95 disabled:scale-100 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:opacity-30"
+                        className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-950 transition-all hover:bg-white active:scale-95 disabled:scale-100 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:opacity-40"
                         title="Send message"
                     >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
                         </svg>
                     </button>
                 </form>
 
-                <div className="mx-auto mt-2 flex max-w-4xl items-center justify-between px-2 font-mono text-[10px] text-zinc-500">
-                    <span>Shift + Enter for new line</span>
+                <div className="mx-auto mt-2 flex max-w-4xl items-center justify-between px-1 font-mono text-[10px] text-zinc-500">
+                    <span>Enter to send · Shift+Enter for new line</span>
                     <span>Context: ~{totalTokens} tokens</span>
                 </div>
             </div>
