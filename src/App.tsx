@@ -26,6 +26,29 @@ const INITIAL_SESSION: ChatSession = {
 };
 
 export function App() {
+    // Theme state (Light / Dark)
+    const [isDark, setIsDark] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem("ai_studio_theme");
+            if (saved === "light") return false;
+            if (saved === "dark") return true;
+            return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true;
+        } catch {
+            return true;
+        }
+    });
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (isDark) {
+            root.classList.add("dark");
+            localStorage.setItem("ai_studio_theme", "dark");
+        } else {
+            root.classList.remove("dark");
+            localStorage.setItem("ai_studio_theme", "light");
+        }
+    }, [isDark]);
+
     // Settings state
     const [settings, setSettings] = useState<UserSettings>(() => {
         try {
@@ -147,7 +170,6 @@ export function App() {
             timestamp,
         };
 
-        // Determine title if this is the first user turn in the session
         const currentMessages = activeSession.messages;
         let newTitle = activeSession.title;
         if (currentMessages.length === 0 || activeSession.title === "New Conversation") {
@@ -212,7 +234,6 @@ export function App() {
 
         setErrorMessage(null);
 
-        // Remove last assistant turn if present
         let sliced = [...currentMessages];
         if (sliced[sliced.length - 1].role === "assistant") {
             sliced = sliced.slice(0, -1);
@@ -272,27 +293,35 @@ export function App() {
     };
 
     return (
-        <AppLayout
-            sessions={sessions}
-            activeSessionId={activeSession.id}
-            selectedModel={settings.selectedModel}
-            onSelectSession={setActiveSessionId}
-            onCreateNewSession={handleCreateNewSession}
-            onDeleteSession={handleDeleteSession}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-        >
-            <ChatEngine
-                session={activeSession}
-                isGenerating={isGenerating}
-                errorMessage={errorMessage}
-                selectedModel={settings.selectedModel}
-                onSendMessage={handleSendMessage}
+        <>
+            <AppLayout
+                sessions={sessions}
+                activeSessionId={activeSession.id}
+                settings={settings}
+                isDark={isDark}
+                onToggleTheme={() => setIsDark(!isDark)}
+                onSelectSession={setActiveSessionId}
+                onCreateNewSession={handleCreateNewSession}
+                onDeleteSession={handleDeleteSession}
                 onUpdateSystemPrompt={handleUpdateSystemPrompt}
+                onUpdateSettings={setSettings}
                 onClearHistory={handleClearHistory}
-                onRegenerateLastTurn={handleRegenerateLastTurn}
-                onDismissError={() => setErrorMessage(null)}
                 onOpenSettings={() => setIsSettingsOpen(true)}
-            />
+            >
+                {({ onOpenSystemPrompt }) => (
+                    <ChatEngine
+                        session={activeSession}
+                        isGenerating={isGenerating}
+                        errorMessage={errorMessage}
+                        selectedModel={settings.selectedModel}
+                        onSendMessage={handleSendMessage}
+                        onRegenerateLastTurn={handleRegenerateLastTurn}
+                        onDismissError={() => setErrorMessage(null)}
+                        onOpenSystemPrompt={onOpenSystemPrompt}
+                        onOpenSettings={() => setIsSettingsOpen(true)}
+                    />
+                )}
+            </AppLayout>
 
             <SettingsManager
                 isOpen={isSettingsOpen}
@@ -302,7 +331,7 @@ export function App() {
                 sessions={sessions}
                 onImportSessions={handleImportSessions}
             />
-        </AppLayout>
+        </>
     );
 }
 

@@ -1,15 +1,12 @@
 /* src/index.css */
 @import "tailwindcss";
-
-:root {
-    color-scheme: dark;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
 * {
     box-sizing: border-box;
 }
 
-/* Subtle, minimal scrollbars for desktop */
+/* Subtle, minimal scrollbars that adapt to light & dark mode */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -20,12 +17,20 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(113, 113, 122, 0.25);
     border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(113, 113, 122, 0.45);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
 }
 
 @theme {
@@ -34,7 +39,7 @@
     @keyframes fadeIn {
         from {
             opacity: 0;
-            transform: translateY(2px);
+            transform: translateY(4px);
         }
         to {
             opacity: 1;

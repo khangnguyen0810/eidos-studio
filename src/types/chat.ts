@@ -2,6 +2,8 @@
 
 export type APIProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "custom";
 
+export type ThemeMode = "light" | "dark" | "system";
+
 export interface ChatMessage {
     id: string;
     role: "user" | "assistant" | "system";
@@ -26,6 +28,7 @@ export interface UserSettings {
     selectedModel: string;
     temperature: number;
     maxTokens: number;
+    theme?: ThemeMode;
 }
 
 export interface ModelPreset {
