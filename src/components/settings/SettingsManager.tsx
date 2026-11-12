@@ -48,7 +48,7 @@ const PROVIDER_PRESETS: Record<UserSettings["provider"], {
         name: "DeepSeek",
         defaultModel: "deepseek-chat",
         defaultBaseUrl: "https://api.deepseek.com",
-        models: ["deepseek-chat", "deepseek-reasoner"],
+        models: ["deepseek-chat", "deepseek-reasoner", "deepseek-v4-pro", "deepseek-r1"],
         apiKeyUrl: "https://platform.deepseek.com/api_keys",
         apiKeyHint: "DeepSeek API Key",
     },
@@ -92,6 +92,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
             provider,
             selectedModel: preset.defaultModel,
             baseUrl: preset.defaultBaseUrl,
+            reasoningEffort: provider === "deepseek" ? (prev.reasoningEffort || "max") : prev.reasoningEffort,
         }));
     };
 
@@ -395,6 +396,43 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                                     Unlimited: Output length will not be constrained, allowing models to generate full responses up to their maximum context limits.
                                 </p>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Reasoning Effort (DeepSeek Thinking Mode) */}
+                    <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/70 p-3.5 dark:border-white/[0.07] dark:bg-[#121216]">
+                        <div className="mb-2 flex items-center justify-between">
+                            <div>
+                                <label className="font-mono text-[10px] font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                                    Reasoning Effort
+                                </label>
+                                <span className="ml-2 text-[10px] text-zinc-400 dark:text-zinc-500">
+                                    (DeepSeek thinking mode: reasoning_effort=&quot;max&quot;)
+                                </span>
+                            </div>
+                            <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-200 uppercase">
+                                {draft.reasoningEffort || (draft.provider === "deepseek" ? "max" : "none")}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-1.5">
+                            {(["none", "low", "medium", "high", "max"] as const).map((level) => {
+                                const current = draft.reasoningEffort ?? (draft.provider === "deepseek" ? "max" : "none");
+                                const isSelected = current === level;
+                                return (
+                                    <button
+                                        key={level}
+                                        type="button"
+                                        onClick={() => setDraft({ ...draft, reasoningEffort: level })}
+                                        className={`rounded py-1 text-center font-mono text-[11px] uppercase transition-colors ${
+                                            isSelected
+                                                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-medium"
+                                                : "border border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900 dark:border-white/[0.08] dark:bg-[#141418] dark:text-zinc-400 dark:hover:border-white/[0.16] dark:hover:text-zinc-200"
+                                        }`}
+                                    >
+                                        {level}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 

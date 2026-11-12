@@ -194,7 +194,7 @@ export function App() {
         setIsGenerating(true);
 
         try {
-            const aiResponseText = await sendAiRequest(
+            const aiResult = await sendAiRequest(
                 settings,
                 activeSession.systemPrompt,
                 updatedHistory,
@@ -203,7 +203,8 @@ export function App() {
             const assistantMessage: ChatMessage = {
                 id: `msg-ai-${Date.now()}`,
                 role: "assistant",
-                content: aiResponseText,
+                content: aiResult.content,
+                reasoning: aiResult.reasoning,
                 timestamp: new Date().toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
@@ -252,7 +253,7 @@ export function App() {
         setIsGenerating(true);
 
         try {
-            const aiResponseText = await sendAiRequest(
+            const aiResult = await sendAiRequest(
                 settings,
                 activeSession.systemPrompt,
                 sliced,
@@ -261,7 +262,8 @@ export function App() {
             const assistantMessage: ChatMessage = {
                 id: `msg-ai-${Date.now()}`,
                 role: "assistant",
-                content: aiResponseText,
+                content: aiResult.content,
+                reasoning: aiResult.reasoning,
                 timestamp: new Date().toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",

@@ -2,6 +2,11 @@
 
 import type { ChatMessage, UserSettings } from "../types/chat";
 
+export interface AiResponseResult {
+    content: string;
+    reasoning?: string;
+}
+
 /**
  * Sends system prompt and conversation history to the configured AI API provider.
  */
@@ -9,7 +14,7 @@ export async function sendAiRequest(
     settings: UserSettings,
     systemPrompt: string,
     historyMessages: ChatMessage[],
-): Promise<string> {
+): Promise<AiResponseResult> {
     const provider = settings.provider;
     const apiKey = settings.apiKey.trim();
     const hasTokenCap = typeof settings.maxTokens === "number" && settings.maxTokens > 0;
@@ -72,7 +77,12 @@ export async function sendAiRequest(
             }
 
             const data = await response.json();
-            return data.choices?.[0]?.message?.content || "No response generated.";
+            const choice = data.choices?.[0];
+            const message = choice?.message;
+            const content = message?.content || "No response generated.";
+            const reasoning = message?.reasoning_content || message?.reasoning || undefined;
+
+            return { content, reasoning };
         }
 
         // Native Google Gemini REST Endpoint (default for Google AI Studio keys)
@@ -122,8 +132,16 @@ export async function sendAiRequest(
             throw new Error("Response blocked by Gemini safety filters.");
         }
 
-        const text = candidate?.content?.parts?.map((p: any) => p.text).filter(Boolean).join("\n");
-        return text || "No response generated.";
+        const parts: any[] = candidate?.content?.parts || [];
+        const thoughtParts = parts.filter((p) => p.thought).map((p) => p.text).filter(Boolean);
+        const regularParts = parts.filter((p) => !p.thought).map((p) => p.text).filter(Boolean);
+
+        const reasoning = thoughtParts.length > 0 ? thoughtParts.join("\n") : undefined;
+        const content = regularParts.length > 0
+            ? regularParts.join("\n")
+            : parts.map((p) => p.text).filter(Boolean).join("\n") || "No response generated.";
+
+        return { content, reasoning };
     }
 
     // --- Anthropic Claude ---
@@ -170,7 +188,12 @@ export async function sendAiRequest(
 
         const data = await response.json();
         const textBlock = data.content?.find((b: any) => b.type === "text");
-        return textBlock?.text || "No response generated.";
+        const thinkingBlock = data.content?.find((b: any) => b.type === "thinking");
+
+        return {
+            content: textBlock?.text || "No response generated.",
+            reasoning: thinkingBlock?.thinking,
+        };
     }
 
     // --- OpenAI / DeepSeek / Custom (Compatible Chat Completions) ---
@@ -193,13 +216,36 @@ export async function sendAiRequest(
     }
     apiMessages.push(...conversation);
 
+    const isDeepSeek = provider === "deepseek" || /deepseek/i.test(settings.selectedModel || "");
+    const model = settings.selectedModel || (provider === "deepseek" ? "deepseek-chat" : "gpt-4o");
+
     const payload: Record<string, any> = {
-        model: settings.selectedModel || (provider === "deepseek" ? "deepseek-chat" : "gpt-4o"),
+        model,
         temperature: settings.temperature ?? 0.7,
         messages: apiMessages,
     };
+
     if (hasTokenCap) {
         payload.max_tokens = settings.maxTokens;
+    }
+
+    // Determine reasoning effort (default to 'max' for DeepSeek if not explicitly set to 'none')
+    const reasoningEffort = settings.reasoningEffort ?? (isDeepSeek ? "max" : undefined);
+
+    if (reasoningEffort && reasoningEffort !== "none") {
+        payload.reasoning_effort = reasoningEffort;
+
+        // DeepSeek thinking mode configuration (supporting both direct and extra_body schemas)
+        payload.extra_body = {
+            thinking: {
+                type: "enabled",
+            },
+            reasoning_effort: reasoningEffort,
+        };
+
+        payload.thinking = {
+            type: "enabled",
+        };
     }
 
     const response = await fetch(endpoint, {
@@ -215,6 +261,13 @@ export async function sendAiRequest(
     }
 
     const data = await response.json();
-    const resultText = data.choices?.[0]?.message?.content;
-    return resultText || "No response generated.";
+    const choice = data.choices?.[0];
+    const message = choice?.message;
+    const content = message?.content || "";
+    const reasoning = message?.reasoning_content || message?.reasoning || choice?.reasoning || undefined;
+
+    return {
+        content: content || (reasoning ? "" : "No response generated."),
+        reasoning,
+    };
 }

@@ -256,6 +256,46 @@ export const StudioPanel: React.FC<StudioPanelProps> = ({
                                 </p>
                             )}
                         </div>
+
+                        {/* Reasoning Effort (DeepSeek & Thinking Models) */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs text-zinc-600 dark:text-zinc-400">
+                                    Reasoning Effort
+                                </label>
+                                <span className="font-mono text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 uppercase">
+                                    {settings.reasoningEffort || (settings.provider === "deepseek" ? "max" : "none")}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1">
+                                {(["none", "low", "medium", "high", "max"] as const).map((level) => {
+                                    const current = settings.reasoningEffort ?? (settings.provider === "deepseek" ? "max" : "none");
+                                    const isSelected = current === level;
+                                    return (
+                                        <button
+                                            key={level}
+                                            type="button"
+                                            onClick={() =>
+                                                onUpdateSettings({
+                                                    ...settings,
+                                                    reasoningEffort: level,
+                                                })
+                                            }
+                                            className={`rounded py-1 text-center font-mono text-[10px] uppercase transition-colors ${
+                                                isSelected
+                                                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-medium"
+                                                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200/80 dark:bg-white/[0.05] dark:text-zinc-400 dark:hover:bg-white/[0.1]"
+                                            }`}
+                                        >
+                                            {level}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+                                DeepSeek thinking mode intensity (<code className="font-mono">reasoning_effort: &quot;max&quot;</code>).
+                            </p>
+                        </div>
                     </div>
 
                     <div className="border-t border-zinc-200/80 dark:border-white/[0.06]" />

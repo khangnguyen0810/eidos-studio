@@ -229,6 +229,26 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                                                 </span>
                                             </div>
 
+                                            {/* Reasoning / Thought Process if present */}
+                                            {msg.reasoning && (
+                                                <div className="pl-7 mb-2">
+                                                    <details className="group/thinking rounded-lg border border-zinc-200/80 bg-zinc-50/70 p-2.5 transition-colors dark:border-white/[0.08] dark:bg-[#121216]">
+                                                        <summary className="flex cursor-pointer items-center justify-between font-mono text-[11px] font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 select-none">
+                                                            <span className="flex items-center gap-1.5">
+                                                                <svg className="h-3 w-3 text-zinc-400 transition-transform group-open/thinking:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                </svg>
+                                                                <span>Thought Process</span>
+                                                            </span>
+                                                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500">Reasoning</span>
+                                                        </summary>
+                                                        <div className="mt-2.5 border-t border-zinc-200/60 pt-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-zinc-600 dark:border-white/[0.06] dark:text-zinc-400">
+                                                            {msg.reasoning}
+                                                        </div>
+                                                    </details>
+                                                </div>
+                                            )}
+
                                             {/* Content */}
                                             <div className="pl-7 select-text">
                                                 <FormattedMessageContent content={msg.content} isUser={false} />

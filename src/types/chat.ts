@@ -4,11 +4,14 @@ export type APIProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "cust
 
 export type ThemeMode = "light" | "dark" | "system";
 
+export type ReasoningEffort = "none" | "low" | "medium" | "high" | "max";
+
 export interface ChatMessage {
     id: string;
     role: "user" | "assistant" | "system";
     content: string;
     timestamp: string;
+    reasoning?: string;
     tokenCount?: number;
 }
 
@@ -28,6 +31,8 @@ export interface UserSettings {
     selectedModel: string;
     temperature: number;
     maxTokens: number | null;
+    reasoningEffort?: ReasoningEffort;
+    showReasoning?: boolean;
     theme?: ThemeMode;
 }
 
