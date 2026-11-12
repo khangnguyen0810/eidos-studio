@@ -332,26 +332,69 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                         <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/70 p-3.5 dark:border-white/[0.07] dark:bg-[#121216]">
                             <div className="mb-2 flex items-center justify-between">
                                 <label className="font-mono text-[10px] font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                                    Max Tokens
+                                    Max Output Tokens
                                 </label>
-                                <span className="font-mono text-xs font-medium text-zinc-900 dark:text-zinc-200">
-                                    {draft.maxTokens}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setDraft({
+                                                ...draft,
+                                                maxTokens: draft.maxTokens === null ? 4096 : null,
+                                            })
+                                        }
+                                        className={`rounded-sm px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+                                            draft.maxTokens === null
+                                                ? "bg-zinc-900 text-white font-medium dark:bg-zinc-100 dark:text-zinc-950"
+                                                : "bg-zinc-200/80 text-zinc-600 hover:text-zinc-900 dark:bg-white/[0.08] dark:text-zinc-400 dark:hover:text-zinc-200"
+                                        }`}
+                                    >
+                                        {draft.maxTokens === null ? "Unlimited" : "Set Limit"}
+                                    </button>
+                                    {draft.maxTokens !== null && (
+                                        <span className="font-mono text-xs font-medium text-zinc-900 dark:text-zinc-200">
+                                            {draft.maxTokens >= 1024
+                                                ? `${(draft.maxTokens / 1024).toFixed(draft.maxTokens % 1024 === 0 ? 0 : 1)}k`
+                                                : draft.maxTokens}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <input
-                                type="range"
-                                min={256}
-                                max={8192}
-                                step={256}
-                                value={draft.maxTokens}
-                                onChange={(e) => setDraft({ ...draft, maxTokens: parseInt(e.target.value) })}
-                                className="w-full cursor-pointer accent-zinc-900 dark:accent-zinc-200"
-                            />
-                            <div className="mt-1.5 flex justify-between font-mono text-[10px] text-zinc-400 dark:text-zinc-600">
-                                <span>256</span>
-                                <span>4096</span>
-                                <span>8192</span>
-                            </div>
+                            {draft.maxTokens !== null ? (
+                                <>
+                                    <input
+                                        type="range"
+                                        min={256}
+                                        max={65536}
+                                        step={draft.maxTokens > 16384 ? 2048 : draft.maxTokens > 4096 ? 1024 : 256}
+                                        value={draft.maxTokens}
+                                        onChange={(e) =>
+                                            setDraft({ ...draft, maxTokens: parseInt(e.target.value) })
+                                        }
+                                        className="w-full cursor-pointer accent-zinc-900 dark:accent-zinc-200"
+                                    />
+                                    <div className="mt-1.5 flex flex-wrap gap-1">
+                                        {[2048, 4096, 8192, 16384, 32768, 65536].map((num) => (
+                                            <button
+                                                key={num}
+                                                type="button"
+                                                onClick={() => setDraft({ ...draft, maxTokens: num })}
+                                                className={`rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+                                                    draft.maxTokens === num
+                                                        ? "bg-zinc-900 text-white font-medium dark:bg-zinc-100 dark:text-zinc-950"
+                                                        : "bg-zinc-200/70 text-zinc-600 hover:text-zinc-900 dark:bg-white/[0.06] dark:text-zinc-400 dark:hover:text-zinc-200"
+                                                }`}
+                                            >
+                                                {num >= 1024 ? `${num / 1024}k` : num}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                    Unlimited: Output length will not be constrained, allowing models to generate full responses up to their maximum context limits.
+                                </p>
+                            )}
                         </div>
                     </div>
 

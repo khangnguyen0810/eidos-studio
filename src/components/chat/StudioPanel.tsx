@@ -179,30 +179,82 @@ export const StudioPanel: React.FC<StudioPanelProps> = ({
                             </div>
                         </div>
 
-                        {/* Max Output Tokens Slider */}
+                        {/* Max Output Tokens Control */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <label className="text-xs text-zinc-600 dark:text-zinc-400">
                                     Max Output Tokens
                                 </label>
-                                <span className="rounded bg-zinc-200/70 px-1.5 py-0.5 font-mono text-[11px] text-zinc-800 dark:bg-white/[0.07] dark:text-zinc-200">
-                                    {settings.maxTokens}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            onUpdateSettings({
+                                                ...settings,
+                                                maxTokens: settings.maxTokens === null ? 4096 : null,
+                                            })
+                                        }
+                                        className={`rounded-sm px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+                                            settings.maxTokens === null
+                                                ? "bg-zinc-900 text-white font-medium dark:bg-zinc-100 dark:text-zinc-950"
+                                                : "bg-zinc-200/80 text-zinc-600 hover:text-zinc-900 dark:bg-white/[0.08] dark:text-zinc-400 dark:hover:text-zinc-200"
+                                        }`}
+                                    >
+                                        {settings.maxTokens === null ? "Unlimited" : "Set Limit"}
+                                    </button>
+                                    {settings.maxTokens !== null && (
+                                        <span className="rounded bg-zinc-200/70 px-1.5 py-0.5 font-mono text-[11px] font-medium text-zinc-800 dark:bg-white/[0.07] dark:text-zinc-200">
+                                            {settings.maxTokens >= 1024
+                                                ? `${(settings.maxTokens / 1024).toFixed(settings.maxTokens % 1024 === 0 ? 0 : 1)}k`
+                                                : settings.maxTokens}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <input
-                                type="range"
-                                min={256}
-                                max={8192}
-                                step={256}
-                                value={settings.maxTokens}
-                                onChange={(e) =>
-                                    onUpdateSettings({
-                                        ...settings,
-                                        maxTokens: parseInt(e.target.value),
-                                    })
-                                }
-                                className="w-full cursor-pointer accent-zinc-900 dark:accent-zinc-200"
-                            />
+
+                            {settings.maxTokens !== null ? (
+                                <>
+                                    <input
+                                        type="range"
+                                        min={256}
+                                        max={65536}
+                                        step={settings.maxTokens > 16384 ? 2048 : settings.maxTokens > 4096 ? 1024 : 256}
+                                        value={settings.maxTokens}
+                                        onChange={(e) =>
+                                            onUpdateSettings({
+                                                ...settings,
+                                                maxTokens: parseInt(e.target.value),
+                                            })
+                                        }
+                                        className="w-full cursor-pointer accent-zinc-900 dark:accent-zinc-200"
+                                    />
+                                    <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                        {[2048, 4096, 8192, 16384, 32768, 65536].map((num) => (
+                                            <button
+                                                key={num}
+                                                type="button"
+                                                onClick={() =>
+                                                    onUpdateSettings({
+                                                        ...settings,
+                                                        maxTokens: num,
+                                                    })
+                                                }
+                                                className={`rounded px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+                                                    settings.maxTokens === num
+                                                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-medium"
+                                                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200/80 dark:bg-white/[0.05] dark:text-zinc-400 dark:hover:bg-white/[0.1]"
+                                                }`}
+                                            >
+                                                {num >= 1024 ? `${num / 1024}k` : num}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                                    No output cap applied. Model will generate up to its native capacity or natural completion.
+                                </p>
+                            )}
                         </div>
                     </div>
 

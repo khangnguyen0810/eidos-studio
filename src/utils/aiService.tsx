@@ -12,6 +12,7 @@ export async function sendAiRequest(
 ): Promise<string> {
     const provider = settings.provider;
     const apiKey = settings.apiKey.trim();
+    const hasTokenCap = typeof settings.maxTokens === "number" && settings.maxTokens > 0;
 
     // Pre-validation check for providers requiring an API key
     if (provider !== "custom" && !apiKey) {
@@ -46,18 +47,22 @@ export async function sendAiRequest(
             }
             apiMessages.push(...conversation);
 
+            const payload: Record<string, any> = {
+                model,
+                temperature: settings.temperature ?? 0.7,
+                messages: apiMessages,
+            };
+            if (hasTokenCap) {
+                payload.max_tokens = settings.maxTokens;
+            }
+
             const response = await fetch(endpoint, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${apiKey}`,
                 },
-                body: JSON.stringify({
-                    model,
-                    temperature: settings.temperature ?? 0.7,
-                    max_tokens: settings.maxTokens || 2048,
-                    messages: apiMessages,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -78,12 +83,16 @@ export async function sendAiRequest(
             parts: [{ text: m.content }],
         }));
 
+        const generationConfig: Record<string, any> = {
+            temperature: settings.temperature ?? 0.7,
+        };
+        if (hasTokenCap) {
+            generationConfig.maxOutputTokens = settings.maxTokens;
+        }
+
         const body: Record<string, any> = {
             contents,
-            generationConfig: {
-                temperature: settings.temperature ?? 0.7,
-                maxOutputTokens: settings.maxTokens || 2048,
-            },
+            generationConfig,
         };
 
         if (systemPrompt && systemPrompt.trim()) {
@@ -121,10 +130,19 @@ export async function sendAiRequest(
     if (provider === "anthropic") {
         const baseUrl = (settings.baseUrl || "https://api.anthropic.com/v1").trim().replace(/\/+$/, "");
         const endpoint = `${baseUrl}/messages`;
+        const model = settings.selectedModel || "claude-3-5-sonnet-20241022";
+
+        // Anthropic requires max_tokens in /v1/messages; when Unlimited is selected, use model's max safe ceiling
+        const isHighOutputClaude = /3-7|3\.7|claude-4|sonnet-4|opus-4|haiku-4/i.test(model);
+        const anthropicMaxTokens = hasTokenCap
+            ? settings.maxTokens
+            : isHighOutputClaude
+                ? 64000
+                : 8192;
 
         const requestBody: Record<string, any> = {
-            model: settings.selectedModel || "claude-3-5-sonnet-20241022",
-            max_tokens: settings.maxTokens || 2048,
+            model,
+            max_tokens: anthropicMaxTokens,
             temperature: settings.temperature ?? 0.7,
             messages: conversation,
         };
@@ -175,15 +193,19 @@ export async function sendAiRequest(
     }
     apiMessages.push(...conversation);
 
+    const payload: Record<string, any> = {
+        model: settings.selectedModel || (provider === "deepseek" ? "deepseek-chat" : "gpt-4o"),
+        temperature: settings.temperature ?? 0.7,
+        messages: apiMessages,
+    };
+    if (hasTokenCap) {
+        payload.max_tokens = settings.maxTokens;
+    }
+
     const response = await fetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-            model: settings.selectedModel || (provider === "deepseek" ? "deepseek-chat" : "gpt-4o"),
-            temperature: settings.temperature ?? 0.7,
-            max_tokens: settings.maxTokens || 2048,
-            messages: apiMessages,
-        }),
+        body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS: UserSettings = {
     baseUrl: "https://generativelanguage.googleapis.com",
     selectedModel: "gemini-1.5-flash",
     temperature: 0.7,
-    maxTokens: 2048,
+    maxTokens: null,
 };
 
 const INITIAL_SESSION: ChatSession = {

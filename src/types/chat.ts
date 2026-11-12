@@ -27,7 +27,7 @@ export interface UserSettings {
     baseUrl: string;
     selectedModel: string;
     temperature: number;
-    maxTokens: number;
+    maxTokens: number | null;
     theme?: ThemeMode;
 }
 
