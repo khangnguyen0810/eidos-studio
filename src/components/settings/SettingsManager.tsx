@@ -48,7 +48,7 @@ const PROVIDER_PRESETS: Record<UserSettings["provider"], {
         name: "DeepSeek",
         defaultModel: "deepseek-chat",
         defaultBaseUrl: "https://api.deepseek.com",
-        models: ["deepseek-chat", "deepseek-reasoner", "deepseek-v4-pro", "deepseek-r1"],
+        models: ["deepseek-chat", "deepseek-reasoner", "deepseek-flash", "deepseek-v4-pro", "deepseek-r1"],
         apiKeyUrl: "https://platform.deepseek.com/api_keys",
         apiKeyHint: "DeepSeek API Key",
     },
