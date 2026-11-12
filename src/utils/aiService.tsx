@@ -14,6 +14,7 @@ export async function sendAiRequest(
     settings: UserSettings,
     systemPrompt: string,
     historyMessages: ChatMessage[],
+    signal?: AbortSignal,
 ): Promise<AiResponseResult> {
     const provider = settings.provider;
     const apiKey = settings.apiKey.trim();
@@ -63,6 +64,7 @@ export async function sendAiRequest(
 
             const response = await fetch(endpoint, {
                 method: "POST",
+                signal,
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${apiKey}`,
@@ -113,6 +115,7 @@ export async function sendAiRequest(
 
         const response = await fetch(endpoint, {
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
             },
@@ -171,6 +174,7 @@ export async function sendAiRequest(
 
         const response = await fetch(endpoint, {
             method: "POST",
+            signal,
             headers: {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey,
@@ -250,6 +254,7 @@ export async function sendAiRequest(
 
     const response = await fetch(endpoint, {
         method: "POST",
+        signal,
         headers,
         body: JSON.stringify(payload),
     });

@@ -11,6 +11,8 @@ interface ChatEngineProps {
     selectedModel: string;
     onSendMessage: (content: string) => void;
     onRegenerateLastTurn: () => void;
+    onUndoTurn: (targetMessageId?: string) => string;
+    onStopGeneration: () => void;
     onDismissError: () => void;
     onOpenSystemPrompt: () => void;
     onOpenSettings: () => void;
@@ -42,6 +44,8 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
     selectedModel,
     onSendMessage,
     onRegenerateLastTurn,
+    onUndoTurn,
+    onStopGeneration,
     onDismissError,
     onOpenSystemPrompt,
     onOpenSettings,
@@ -58,6 +62,22 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
         }
     }, [session.messages, isGenerating, errorMessage]);
 
+    const handleUndo = (targetId?: string) => {
+        const restored = onUndoTurn(targetId);
+        if (restored) {
+            setInput(restored);
+        }
+        if (textareaRef.current) {
+            textareaRef.current.focus();
+            setTimeout(() => {
+                if (textareaRef.current) {
+                    textareaRef.current.style.height = "auto";
+                    textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 220)}px`;
+                }
+            }, 0);
+        }
+    };
+
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         const trimmed = input.trim();
@@ -73,6 +93,21 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleSubmit();
+            return;
+        }
+
+        // ArrowUp when input is empty undoes the last turn and loads prompt back into textarea
+        if (e.key === "ArrowUp" && input === "" && session.messages.length > 0) {
+            e.preventDefault();
+            handleUndo();
+            return;
+        }
+
+        // Ctrl+Z or Cmd+Z when input is empty undoes the last exchange
+        if ((e.ctrlKey || e.metaKey) && e.key === "z" && input === "" && session.messages.length > 0) {
+            e.preventDefault();
+            handleUndo();
+            return;
         }
     };
 
@@ -201,13 +236,22 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                                             {/* Micro-toolbar on hover */}
                                             <div className="mt-2 flex items-center justify-between border-t border-zinc-200/60 pt-1.5 font-mono text-[10px] text-zinc-400 dark:border-white/[0.06] dark:text-zinc-500">
                                                 <span>{msg.timestamp}</span>
-                                                <button
-                                                    onClick={() => handleCopyMessage(msg.id, msg.content)}
-                                                    className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-zinc-700 dark:hover:text-zinc-300"
-                                                    title="Copy message"
-                                                >
-                                                    {copiedMessageId === msg.id ? "Copied" : "Copy"}
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleUndo(msg.id)}
+                                                        className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                                        title="Undo turn and edit message"
+                                                    >
+                                                        Edit & Undo
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCopyMessage(msg.id, msg.content)}
+                                                        className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                                        title="Copy message"
+                                                    >
+                                                        {copiedMessageId === msg.id ? "Copied" : "Copy"}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
@@ -279,6 +323,17 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
                                                         <span>Regenerate</span>
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    onClick={() => handleUndo(msg.id)}
+                                                    className="flex items-center gap-1 rounded px-1.5 py-0.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-white/[0.06] dark:hover:text-zinc-200"
+                                                    title="Undo this response and load prompt back into input"
+                                                >
+                                                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" />
+                                                    </svg>
+                                                    <span>Undo</span>
+                                                </button>
                                             </div>
                                         </div>
                                     )}
@@ -323,32 +378,61 @@ export const ChatEngine: React.FC<ChatEngineProps> = ({
 
                         {/* Bottom Bar inside Input Box */}
                         <div className="flex items-center justify-between px-2 pt-1">
-                            <button
-                                type="button"
-                                onClick={onOpenSystemPrompt}
-                                className={`flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] transition-colors ${
-                                    hasCustomPrompt
-                                        ? "bg-zinc-100 text-zinc-800 font-medium dark:bg-white/[0.08] dark:text-zinc-200"
-                                        : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-white/[0.05] dark:hover:text-zinc-300"
-                                }`}
-                                title="Edit System Instructions"
-                            >
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
-                                </svg>
-                                <span>{hasCustomPrompt ? "Prompt Set" : "System Prompt"}</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={onOpenSystemPrompt}
+                                    className={`flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] transition-colors ${
+                                        hasCustomPrompt
+                                            ? "bg-zinc-100 text-zinc-800 font-medium dark:bg-white/[0.08] dark:text-zinc-200"
+                                            : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-white/[0.05] dark:hover:text-zinc-300"
+                                    }`}
+                                    title="Edit System Instructions"
+                                >
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.5 6h9.75M10.5 12h9.75M10.5 18h9.75M4.5 6h.008v.008H4.5V6zm0 6h.008v.008H4.5V12zm0 6h.008v.008H4.5V18z" />
+                                    </svg>
+                                    <span>{hasCustomPrompt ? "Prompt Set" : "System Prompt"}</span>
+                                </button>
 
-                            <button
-                                type="submit"
-                                disabled={!input.trim() || isGenerating}
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white shadow-xs transition-all hover:bg-black active:scale-95 disabled:scale-100 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600"
-                                title="Send message"
-                            >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
-                                </svg>
-                            </button>
+                                {session.messages.length > 0 && !isGenerating && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUndo()}
+                                        className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-white/[0.05] dark:hover:text-zinc-300"
+                                        title="Undo last message (or press Up arrow / Ctrl+Z)"
+                                    >
+                                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h10a5 5 0 015 5v2m-15-7l4-4m-4 4l4 4" />
+                                        </svg>
+                                        <span>Undo</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {isGenerating ? (
+                                <button
+                                    type="button"
+                                    onClick={onStopGeneration}
+                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white shadow-xs transition-all hover:bg-zinc-700 active:scale-95 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-300"
+                                    title="Stop generation"
+                                >
+                                    <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                                        <rect x="6" y="6" width="12" height="12" rx="1.5" />
+                                    </svg>
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim()}
+                                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white shadow-xs transition-all hover:bg-black active:scale-95 disabled:scale-100 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600"
+                                    title="Send message"
+                                >
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                     </form>
 

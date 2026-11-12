@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ChatEngine } from "./components/chat/ChatEngine";
 import { SettingsManager } from "./components/settings/SettingsManager";
@@ -86,6 +86,7 @@ export function App() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Sync settings & sessions to LocalStorage
     useEffect(() => {
@@ -191,6 +192,11 @@ export function App() {
             ),
         );
 
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
         setIsGenerating(true);
 
         try {
@@ -198,6 +204,7 @@ export function App() {
                 settings,
                 activeSession.systemPrompt,
                 updatedHistory,
+                controller.signal,
             );
 
             const assistantMessage: ChatMessage = {
@@ -223,10 +230,73 @@ export function App() {
                 ),
             );
         } catch (err: any) {
-            setErrorMessage(err.message || "Failed to generate response.");
+            if (err.name !== "AbortError") {
+                setErrorMessage(err.message || "Failed to generate response.");
+            }
         } finally {
             setIsGenerating(false);
+            abortControllerRef.current = null;
         }
+    };
+
+    const handleStopGeneration = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        setIsGenerating(false);
+    };
+
+    const handleUndoTurn = (targetMessageId?: string): string => {
+        // If inference is active, stop it first
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+            setIsGenerating(false);
+        }
+
+        const currentMessages = activeSession.messages;
+        if (currentMessages.length === 0) return "";
+
+        let targetIndex = currentMessages.length - 1;
+        if (targetMessageId) {
+            targetIndex = currentMessages.findIndex((m) => m.id === targetMessageId);
+            if (targetIndex === -1) targetIndex = currentMessages.length - 1;
+        }
+
+        let userPromptToRestore = "";
+        let cutIndex = targetIndex;
+
+        if (currentMessages[targetIndex].role === "assistant") {
+            // Target is assistant message: rollback this assistant response and the user turn before it
+            if (targetIndex > 0 && currentMessages[targetIndex - 1].role === "user") {
+                userPromptToRestore = currentMessages[targetIndex - 1].content;
+                cutIndex = targetIndex - 1;
+            } else {
+                cutIndex = targetIndex;
+            }
+        } else if (currentMessages[targetIndex].role === "user") {
+            // Target is user message: rollback this user message and everything subsequent
+            userPromptToRestore = currentMessages[targetIndex].content;
+            cutIndex = targetIndex;
+        }
+
+        const remainingMessages = currentMessages.slice(0, cutIndex);
+
+        setSessions((prev) =>
+            prev.map((s) =>
+                s.id === activeSession.id
+                    ? {
+                          ...s,
+                          messages: remainingMessages,
+                          updatedAt: new Date().toISOString(),
+                      }
+                    : s,
+            ),
+        );
+
+        setErrorMessage(null);
+        return userPromptToRestore;
     };
 
     const handleRegenerateLastTurn = async () => {
@@ -250,6 +320,11 @@ export function App() {
             ),
         );
 
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
         setIsGenerating(true);
 
         try {
@@ -257,6 +332,7 @@ export function App() {
                 settings,
                 activeSession.systemPrompt,
                 sliced,
+                controller.signal,
             );
 
             const assistantMessage: ChatMessage = {
@@ -282,9 +358,12 @@ export function App() {
                 ),
             );
         } catch (err: any) {
-            setErrorMessage(err.message || "Failed to regenerate response.");
+            if (err.name !== "AbortError") {
+                setErrorMessage(err.message || "Failed to regenerate response.");
+            }
         } finally {
             setIsGenerating(false);
+            abortControllerRef.current = null;
         }
     };
 
@@ -318,6 +397,8 @@ export function App() {
                         selectedModel={settings.selectedModel}
                         onSendMessage={handleSendMessage}
                         onRegenerateLastTurn={handleRegenerateLastTurn}
+                        onUndoTurn={handleUndoTurn}
+                        onStopGeneration={handleStopGeneration}
                         onDismissError={() => setErrorMessage(null)}
                         onOpenSystemPrompt={onOpenSystemPrompt}
                         onOpenSettings={() => setIsSettingsOpen(true)}
